@@ -1,8 +1,13 @@
 # JsonParser
 Json解析器
 
-最近在学习语法分析，就用JavaCC试着做了一个Json解析器
+最近在学习语法分析，就用JavaCC试着做了一个Json解析器  
 编译需要先安装JavaCC
+
+# 关于JavaCC
+javacc是一个词法解析与语义解析二合一的工具。它会根据自定义的规则生成相应的解析器代码，可以称之为解析器的解析器，我把它用来生成Json的解析器源码。  
+javacc使用的文件后缀名为.jj，使用javacc命令编译后会生成相应.java的源码文件。  
+同类型的解析器还有 Lex/Yacc, Flex/Bison
 
 # 代码结构
 <pre>
@@ -56,5 +61,7 @@ java Parse "{\"type\":\"success\",\"rows\":[{\"h5_channel_name\":\"\u6e20\u9053_
     ],
   "total":2
 }</pre>
+
+
 
 
