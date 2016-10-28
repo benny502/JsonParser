@@ -1,0 +1,188 @@
+options {
+	STATIC = false;
+}
+
+PARSER_BEGIN(Parse)
+import java.io.*;
+import java.util.*;
+import JsonTree.*;
+
+
+class Parse {
+
+	
+	static public void main(String[] args){
+		for(String arg : args){
+			try {
+				System.out.println(evalute(arg));
+			}catch(ParseException ex){
+				System.err.println(ex.getMessage());
+			}
+			catch(Exception ex){
+				System.err.println(ex.getMessage());
+			}
+		}
+	}
+	
+	static public String evalute(String src) throws ParseException {
+		Reader reader = new StringReader(src);
+		return new Parse(reader).Json();
+	}
+	
+}
+PARSER_END(Parse)
+
+MORE: {
+	<"\""> : IN_STRING
+}
+<IN_STRING> MORE: {
+	<(~["\""])+> 
+}
+
+<IN_STRING> TOKEN: {
+	<IDENTIFIER: "\""> :DEFAULT
+}
+
+TOKEN: {
+	<DIGITAL :  ["1"-"9"](["0"-"9"])*
+				|"0"
+				|["0"-"9"] "." (["0"-"9"])+ >
+}
+
+TOKEN: {
+	<COMMA: ","  >
+}
+
+TOKEN: {
+	<COLON: ":"  >
+}
+
+TOKEN: {
+	<LC : "{">
+}
+
+TOKEN : {
+	<RC : "}">
+}
+
+TOKEN : {
+	<LB : "[">
+}
+
+TOKEN : {
+	<RB : "]">
+}
+
+SPECIAL_TOKEN: {
+	<SPACES : ([" ", "\t", "\n", "\r", "\f"])+>
+}
+
+String Json() : 
+{
+	JNode n;
+}
+{
+	n = JsonArray() {return n.dump();}
+}
+
+JNode JsonArray() : 
+{
+	JKeyPair pair;
+	JArray array;
+	JTerm term = new JTerm();
+}
+{
+	array = Array() { return array;}
+	| <LC> [pair = KeyValuePair()
+	{
+		term.Add(pair);
+	}]
+	 (<COMMA> pair = KeyValuePair()
+	 {
+	 	term.Add(pair);
+	 })* <RC>
+	 { 
+	 	return term; 
+	 }
+}
+
+JKeyPair KeyValuePair() : 
+{
+	JString key;
+	JNode val;
+}
+{
+	key = key() <COLON> val = value()
+	{
+		return new JKeyPair(key,val);
+	}
+}
+
+JNode value() : 
+{
+	JValue value;
+	JNode n;
+	JArray array;
+}
+{
+	value = identifier() {return value;}
+	| LOOKAHEAD(3) n = JsonArray() {return n;}
+	| array = Array() {return array;} 
+}
+
+JArray Array() : 
+{
+	JNode n;
+	JArray list = new JArray();
+}
+{
+	 <LB> [n= ArrayItem()
+	 {
+	 	list.Add(n);
+	 }]
+	  (<COMMA> n = ArrayItem()	  
+	  {
+	  	list.Add(n);
+	  })*
+
+	   <RB> 
+	   {
+	   		return list;
+	   }
+
+}
+
+JNode ArrayItem() : 
+{
+	JNode n;
+	JArray array;
+	JValue value;
+}
+{
+	LOOKAHEAD(3) n = JsonArray() {return n;}
+	| array = Array() {return array;}
+	| value = identifier() {return new JArrayItem(value);}
+}
+
+JString key() : 
+{
+	Token n;
+	JString key;
+}
+{
+	n = <IDENTIFIER> 
+	{
+		return new JString(n.toString());
+	}
+}
+
+JValue identifier():
+{
+	Token x;
+}
+{
+	x = <IDENTIFIER> {return new JString(x.toString());}
+	| x = <DIGITAL> {return new JDigital(Long.parseLong(x.image));}
+}
+
+
